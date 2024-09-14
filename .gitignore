@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 # extra files
-structure.cif
+*.cif
 
 # C extensions
 *.so
