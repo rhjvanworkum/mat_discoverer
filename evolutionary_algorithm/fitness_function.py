@@ -19,8 +19,8 @@ def fitness_function(
     :param convex_hull_calculator: convex hull calculator
     """
     optimizer = MLStructureOptimizer()
-    opt_strucutre, energy = optimizer(pymatgen_to_ase(structure), fmax=0.05, max_steps=500)
-    energy_per_atom = energy / len(opt_strucutre)
-    composition = Composition(opt_strucutre.reduced_formula)
+    opt_structure, energy = optimizer(structure, fmax=0.05, max_steps=500)
+    energy_per_atom = energy / len(opt_structure)
+    composition = Composition(opt_structure.reduced_formula)
     decomp_energy, e_above_hull = convex_hull_calculator(composition, energy)
-    return ase_to_pymatgen(opt_strucutre), 1 - e_above_hull
+    return opt_structure, 1 - e_above_hull
