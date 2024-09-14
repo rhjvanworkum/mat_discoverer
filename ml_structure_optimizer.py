@@ -27,7 +27,7 @@ class MLStructureOptimizer:
         self.filter_cls = self.FILTER_CLS[ase_filter]
         self.optim_cls = self.OPTIM_CLS[ase_optimizer]
 
-    def __call__(self, atoms: Atoms, fmax: float = 0.05, max_steps: int = 500):
+    def __call__(self, atoms: Atoms, fmax: float = 0.05, max_steps: int = 500) -> Atoms:
         atoms.calc = self.calculator
         if max_steps > 0:
             filtered_atoms = self.filter_cls(atoms)
@@ -41,11 +41,8 @@ class MLStructureOptimizer:
             #     optimizer.attach(lambda: energies.append(atoms.get_potential_energy()))  # noqa: B023
 
             optimizer.run(fmax=fmax, steps=max_steps)
-        energy = atoms.get_potential_energy()  # relaxed energy
-        # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
-        relaxed_struct = AseAtomsAdaptor.get_structure(atoms)
-        
-        return relaxed_struct, energy
+        energy = atoms.get_potential_energy()  # relaxed energy        
+        return atoms, energy
 
         # relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
 
