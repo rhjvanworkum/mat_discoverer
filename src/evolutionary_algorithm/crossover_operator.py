@@ -1,7 +1,7 @@
 import random
 from pymatgen.core import Structure, Lattice
 
-from utils import normalize_lattice
+from src.utils import normalize_lattice
 
 
 def crossover_operator(parent1: Structure, parent2: Structure) -> Structure:

@@ -1,24 +1,27 @@
 """
-Example: python evolutionary_algorithm.py run_evolutionary_optimization_algorithm --species "['Zn', 'Cu']" --num_species "[1, 1]"
+Example: python bin/evolutionary_algorithm.py run_evolutionary_optimization_algorithm --species "['Zn', 'Cu']" --num_species "[1, 1]"
 """
 import fire
+from tqdm import tqdm
 from typing import List
 from pymatgen.core import Composition
 import numpy as np
 import random
 
-from generate_crystals import generate_random_crystal_structure_from_composition
-from ml_structure_optimizer import MLStructureOptimizer
-from convex_hull_calculator import ConvexHullCalculator
-from evolutionary_algorithm import crossover_operator, mutate_operator
+from src.generate_random_crystals import generate_random_crystal_structure_from_composition
+from src.ml_structure_optimizer import MLStructureOptimizer
+from src.convex_hull_calculator import ConvexHullCalculator
 from evolutionary_algorithm.fitness_function import fitness_function
 from evolutionary_algorithm.selection import selection_fn
+from evolutionary_algorithm.crossover_operator import crossover_operator
+from evolutionary_algorithm.mutate_operator import mutate_operator
+
 
 def run_evolutionary_optimization_algorithm(
     species: List[str],
     num_species: List[int],
     population_size: int = 20,
-    generations: int = 10,
+    generations: int = 5,
     mutation_rate: float = 0.1,
     selection_pressure: float = 2.0,
 ):
@@ -40,11 +43,10 @@ def run_evolutionary_optimization_algorithm(
     )
     optimizer = MLStructureOptimizer()
 
-    print(f'Starting relaxation and computation of e_above_hull for initial population...')
-    population, fitnesses = zip(*[fitness_function(structure, optimizer, convex_hull_calculator) for structure in initial_population])
-    print(f'Finished relaxation and computation of e_above_hull for initial population.')
-
-    print(population, fitnesses)
+    population, fitnesses = map(list, zip(*[fitness_function(structure, optimizer, convex_hull_calculator) 
+                                            for structure in tqdm(initial_population, 
+                                                                  desc="Relaxation of intial population", 
+                                                                  total=len(initial_population))]))
 
     for generation in range(generations):
         print(f'Working on generation {generation + 1}...')
@@ -61,9 +63,10 @@ def run_evolutionary_optimization_algorithm(
                 offspring = mutate_operator(offspring)
             new_population.append(offspring)
 
-        print(f'New population created. Starting relaxation and computation of e_above_hull...')
-        new_population, new_fitnesses = zip(*[fitness_function(structure, optimizer, convex_hull_calculator) for structure in new_population])
-        print(f'Finished relaxation and computation of e_above_hull.')
+        new_population, new_fitnesses = map(list, zip(*[fitness_function(structure, optimizer, convex_hull_calculator) 
+                                            for structure in tqdm(new_population, 
+                                                                  desc="Relaxation of new population", 
+                                                                  total=len(new_population))]))
 
         population = selected_population + new_population
         fitnesses = selected_fitnesses + new_fitnesses
@@ -71,10 +74,11 @@ def run_evolutionary_optimization_algorithm(
         # Track the best structure
         best_structure = population[np.argmin(fitnesses)]
         best_fitness = np.min(fitnesses)
-        print(f"Generation {generation + 1}: Best Fitness = {best_fitness}")
+        print(f"Generation {generation + 1}: Best Fitness / e_above_hull = {best_fitness}")
 
     print(best_structure, best_fitness)
+    best_structure.to(filename="best_structure.cif")
 
 
 if __name__ == "__main__":
-    fire.Fire()
+    fire.Fire(run_evolutionary_optimization_algorithm)

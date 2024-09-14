@@ -10,8 +10,10 @@ def selection_fn(
 ) -> List[Structure]:
     """
     Selection function for the evolutionary algorithm. The selection is based on the fitness scores of the structures.
+    The lower the fitness score the better.
     """
-    probabilities = (1.0 / fitness_scores) ** selection_pressure
+    _fitness_scores = np.array(fitness_scores) + min(fitness_scores) + 1e-8 # Prevent negative fitness scores and Avoid division by zero
+    probabilities = (1.0 / _fitness_scores) ** selection_pressure
     probabilities /= probabilities.sum()  # Normalize
     selected_indices = np.random.choice(len(population), size=len(population), p=probabilities)
     return [population[i] for i in selected_indices], [fitness_scores[i] for i in selected_indices]

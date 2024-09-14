@@ -1,3 +1,4 @@
+import os
 from typing import Tuple
 from mp_api.client import MPRester
 from pymatgen.core import Composition
@@ -7,10 +8,9 @@ from pymatgen.analysis.phase_diagram import PhaseDiagram
 
 class ConvexHullCalculator:
 
-    MAPI_KEY = "Oic28Apgrq7Ka7P0grP71S5rq7IVRP1C"
-
     def __init__(self, composition: Composition) -> None:
-        with MPRester(self.MAPI_KEY) as mpr:
+        MAPI_KEY = os.getenv("MAPI_KEY")
+        with MPRester(MAPI_KEY) as mpr:
             # Obtain only corrected GGA and GGA+U
             self.entries = mpr.get_entries_in_chemsys(elements=[e.symbol for e in composition.elements], additional_criteria={"thermo_types": ["GGA_GGA+U"]})
 
