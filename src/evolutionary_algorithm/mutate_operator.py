@@ -1,7 +1,7 @@
 from pymatgen.core import Structure
 import numpy as np
 
-from src.utils import swap_atoms_in_pymatgen_structure, modify_lattice_matrix, get_cell_transformation_matrix, randomly_sample_strain_matrix
+from src.utils import swap_atoms_in_pymatgen_structure, modify_lattice_matrix, get_cell_transformation_matrix, randomly_sample_strain_matrix, modify_atomic_positions
 
 
 def mutate_operator(
@@ -21,10 +21,11 @@ def mutate_operator(
         i, j = np.random.choice(len(structure), size=2, replace=False)
         structure = swap_atoms_in_pymatgen_structure(structure, i, j)
 
-    # 2. Mutate cell vectors (deform the lattice basically)
-    structure = modify_lattice_matrix(structure, get_cell_transformation_matrix(randomly_sample_strain_matrix()))
-
-    # TODO: add also mutation of atomic position vectors here
+    # 2. Mutate cell vectors (deform the lattice basically) and atomic positions
+    strain_matrix = randomly_sample_strain_matrix()
+    structure = modify_lattice_matrix(structure, get_cell_transformation_matrix(strain_matrix))
+    # NOTE: I think for me personally, this just adds too much noise to the structure
+    # structure = modify_atomic_positions(structure, strain_matrix)
     
     # 3. Rescale the volume
     structure.scale_lattice(rescaling_volume)

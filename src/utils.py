@@ -49,6 +49,13 @@ def modify_lattice_matrix(structure: Structure, strain_matrix: np.ndarray) -> St
     new_lattice = Lattice(strained_lattice_matrix)
     return Structure(new_lattice, structure.species, structure.frac_coords)
 
+def modify_atomic_positions(structure: Structure, strain_matrix: np.ndarray) -> Structure:
+    """
+    Modify the atomic positions of a pymatgen Structure object using a strain matrix.
+    """
+    new_frac_coords = np.dot(structure.frac_coords, strain_matrix)
+    return Structure(structure.lattice, structure.species, new_frac_coords)
+
 def randomly_sample_strain_matrix() -> np.ndarray:
     """
     Randomly sample a 3x3 strain matrix.
