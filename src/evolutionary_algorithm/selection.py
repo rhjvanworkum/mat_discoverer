@@ -4,16 +4,27 @@ import numpy as np
 
 
 def selection_fn(
-    population: List[Structure], 
     fitness_scores: List[float],
-    selection_pressure: float = 2.0
+    n_to_select: int,
+    selection_pressure: float = 2.0,
 ) -> List[Structure]:
     """
-    Selection function for the evolutionary algorithm. The selection is based on the fitness scores of the structures.
-    The lower the fitness score the better.
+    Selects structures based on their fitness scores using fitness-proportionate selection.
+
+    The lower the fitness score, the better the structure. Selection pressure controls how strongly selection favors
+    the fittest structures.
+
+    :param fitness_scores: List of fitness scores for each structure.
+    :param n_to_select: Number of structures to select.
+    :param selection_pressure: Controls the strength of selection (higher values favor fitter structures).
+    :return: Indices of the selected structures.
     """
-    _fitness_scores = np.array(fitness_scores) + min(fitness_scores) + 1e-8 # Prevent negative fitness scores and Avoid division by zero
-    probabilities = (1.0 / _fitness_scores) ** selection_pressure
-    probabilities /= probabilities.sum()  # Normalize
-    selected_indices = np.random.choice(len(population), size=len(population), p=probabilities)
-    return [population[i] for i in selected_indices], [fitness_scores[i] for i in selected_indices]
+    # Shift fitness scores to avoid zero or negative values
+    adjusted_fitness_scores = np.array(fitness_scores) + 1e-8  # Prevent division by zero
+
+    # Compute selection probabilities
+    probabilities = (1.0 / adjusted_fitness_scores) ** selection_pressure
+    probabilities /= probabilities.sum()  # Normalize probabilities
+
+    # Select structures based on probabilities
+    return np.random.choice(len(fitness_scores), size=n_to_select, p=probabilities)

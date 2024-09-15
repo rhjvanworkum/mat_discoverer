@@ -8,47 +8,64 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 
 
 class ConvexHullCalculator:
-
     def __init__(self, composition: Composition) -> None:
         """
-        This class uses the Materials Project API to calculate the convex hull of a given composition.
+        Initializes the ConvexHullCalculator class, which uses the Materials Project API to calculate the 
+        convex hull for a given composition.
+
         :param composition: pymatgen Composition object
+        """
+        self.entries = self._fetch_entries(composition)
+
+    @staticmethod
+    def _fetch_entries(composition: Composition):
+        """
+        Fetches the thermodynamic entries from the Materials Project database for the given composition's chemical system.
+
+        :param composition: pymatgen Composition object
+        :return: List of computed entries for the chemical system
         """
         MAPI_KEY = os.getenv("MAPI_KEY")
         with MPRester(MAPI_KEY) as mpr:
-            # Obtain only corrected GGA and GGA+U
-            self.entries = mpr.get_entries_in_chemsys(elements=[e.symbol for e in composition.elements], additional_criteria={"thermo_types": ["GGA_GGA+U"]})
+            return mpr.get_entries_in_chemsys(
+                elements=[e.symbol for e in composition.elements],
+                additional_criteria={"thermo_types": ["GGA_GGA+U"]}
+            )
 
-    def __call__(self, composition: Composition, energy: float) -> Tuple[float]:
+    def __call__(self, composition: Composition, energy: float) -> Tuple[float, float]:
         """
-        Computes energy above the convex hull metric.
+        Computes the decomposition energy and energy above the convex hull for a given material.
+
         :param composition: pymatgen Composition object
-        :param energy: energy of the material
-        
-        Returns the decomposition energy and energy above the hull
+        :param energy: Energy of the material
+        :return: Tuple containing decomposition energy and energy above the convex hull
         """
         new_entry = ComputedEntry(composition, energy)
         self.entries.append(new_entry)
         pd = PhaseDiagram(self.entries)
 
-        decomp_energy, e_above_hull = pd.get_decomp_and_e_above_hull(new_entry)
-        return decomp_energy, e_above_hull
-    
-    def check_if_materials_is_novel(self, discovered_structure: Structure) -> bool:
+        return pd.get_decomp_and_e_above_hull(new_entry)
+
+    def structure_is_in_mp(self, discovered_structure: Structure) -> bool:
         """
-        Checks if a material is already in the MP databse or is actually novel
+        Checks if the provided structure already exists in the Materials Project database.
+
         :param discovered_structure: pymatgen Structure object
-        
-        Returns True if the material is novel, False otherwise
+        :return: True if the structure is novel, False if it already exists in the database
+        """
+        structures_from_mp = self._fetch_structures(discovered_structure)
+        matcher = StructureMatcher()
+
+        return not any(matcher.fit(discovered_structure, mp_structure) for mp_structure in structures_from_mp)
+
+    @staticmethod
+    def _fetch_structures(discovered_structure: Structure):
+        """
+        Fetches structures from the Materials Project database based on the formula of the discovered structure.
+
+        :param discovered_structure: pymatgen Structure object
+        :return: List of structures from the Materials Project database
         """
         MAPI_KEY = os.getenv("MAPI_KEY")
         with MPRester(MAPI_KEY) as mpr:
-            # Get a list of structures from Materials Project by chemical formula
-            structures_from_mp = mpr.get_structures(discovered_structure.composition.formula)
-            
-            matcher = StructureMatcher()
-            for mp_structure in structures_from_mp:
-                if matcher.fit(discovered_structure, mp_structure):
-                    return False
-            else:
-                return True
+            return mpr.get_structures(discovered_structure.composition.formula)

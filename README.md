@@ -1,6 +1,7 @@
 # mat_discoverer
 
 This code is a simple attempt at making an evolutionary algorithm that tries to find the most stable phase of a crystal composition on the energy landscape of an ML potential. The code is mostly inspired from: https://arxiv.org/pdf/0911.3186.
+In it current state it doesn't really seem to be able to find the most stable phases that are on Materials Project, alhough I generally find that it does minimze energy of the structures to be optimized.
 
 ## 1. Installation
 - Make sure that you have either Anaconda or Miniconda installed
